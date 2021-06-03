@@ -12,10 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-//
-
-// var RunMode = os.Getenv("runmode")
-
 func HandlerRepoDownload(c *gin.Context) {
 	// log.Println("Request", c.Request.URL)
 	var f = tarballInfo{}
@@ -99,8 +95,8 @@ func HandlerPackageRequestV1(c *gin.Context) {
 		return
 	}
 
-	log.Println(c.Request.URL)
-	spew.Dump(pp)
+	// log.Println(c.Request.URL)
+	// spew.Dump(pp)
 
 	ok, err := dirExists("cache/p")
 	if !ok {
@@ -108,13 +104,13 @@ func HandlerPackageRequestV1(c *gin.Context) {
 	}
 
 	cacheFile := fmt.Sprintf("cache/p/%s", pp.Path)
-	log.Println("[HandlerPackageRequestV1] cacheFile:", cacheFile)
+	// log.Println("[HandlerPackageRequestV1] cacheFile:", cacheFile)
 	content, err := ioutil.ReadFile(cacheFile)
 	if err != nil {
 		log.Println("[HandlerPackageRequestV1] Cache not found, fetching...", cacheFile)
 
 		// Fetch
-		url := fmt.Sprintf("%s/%s", os.Getenv("mirror"), c.Request.URL.String())
+		url := os.Getenv("mirror") + c.Request.URL.String()
 		rt, err := downloadJSON(url)
 		if err != nil {
 			log.Println("[HandlerPackageRequestV1] Fetch resource err:", err)
