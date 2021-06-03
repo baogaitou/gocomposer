@@ -13,7 +13,7 @@ import (
 )
 
 func downloadJSON(url string) ([]byte, error) {
-	log.Println("Request", url)
+	log.Println("Request:", url)
 	ro := &grequests.RequestOptions{
 		Headers: map[string]string{
 			"User-Agent": "Composer/2.0.14 (Darwin; 20.4.0; PHP 7.3.24; cURL 7.64.1)",

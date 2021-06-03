@@ -9,6 +9,9 @@ func InitRouter() *gin.Engine {
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
 
+	// r.UseRawPath = true
+	// r.UnescapePathValues = false
+
 	// Static file for download
 	r.Static("/cache", "./cache")
 
@@ -27,7 +30,9 @@ func InitRouter() *gin.Engine {
 
 	// Support composer v1.x (WIP)
 	// r.Static("/p", "cache/p")
-	// r.GET("/p/:provider", HandlerPackageRequestV1)
+	// r.GET("/p/:author/:package_with_hash", HandlerPackageRequestV1)
+	r.GET("/p/:package", HandlerComposerV1Request)
+	r.GET("/p/:package/:path", HandlerComposerV1Request)
 
 	return r
 }

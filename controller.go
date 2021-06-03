@@ -87,47 +87,6 @@ func HandlerPackageRequest(c *gin.Context) {
 	c.String(200, string(content))
 }
 
-func HandlerPackageRequestV1(c *gin.Context) {
-	log.Println("[HandlerPackageRequestV1] start")
-	var pp PackageProviders
-	if err := c.ShouldBindUri(&pp); err != nil {
-		c.JSON(400, gin.H{"msg": err.Error()})
-		return
-	}
-
-	// log.Println(c.Request.URL)
-	// spew.Dump(pp)
-
-	ok, err := dirExists("cache/p")
-	if !ok {
-		log.Println("[HandlerPackageRequestV1] Create dir err:", err)
-	}
-
-	cacheFile := fmt.Sprintf("cache/p/%s", pp.Path)
-	// log.Println("[HandlerPackageRequestV1] cacheFile:", cacheFile)
-	content, err := ioutil.ReadFile(cacheFile)
-	if err != nil {
-		log.Println("[HandlerPackageRequestV1] Cache not found, fetching...", cacheFile)
-
-		// Fetch
-		url := os.Getenv("mirror") + c.Request.URL.String()
-		rt, err := downloadJSON(url)
-		if err != nil {
-			log.Println("[HandlerPackageRequestV1] Fetch resource err:", err)
-		}
-
-		// Cache file
-		ok, err := writeFile(cacheFile, rt)
-		if !ok {
-			log.Println("[HandlerPackageRequestV1] Write cache file err:", err)
-		}
-		content = rt
-	}
-
-	c.Header("Content-Type", "application/json")
-	c.String(200, string(content))
-}
-
 func HandlerPublicFunc(c *gin.Context) {
 	cacheFile := "cache/packages.json"
 	content, err := ioutil.ReadFile(cacheFile)
@@ -222,4 +181,56 @@ func HandlerDashboard(c *gin.Context) {
 
 	c.Header("Content-Type", "text/html")
 	c.String(200, htmlString)
+}
+
+func HandlerComposerV1Request(c *gin.Context) {
+	var pp pRequest
+	if err := c.ShouldBindUri(&pp); err != nil {
+		c.JSON(400, gin.H{"msg": err.Error()})
+		return
+	}
+
+	// spew.Dump(pp)
+
+	packageFullPath := ""
+	if pp.Path != "" {
+		packageFullPath = pp.Package + "/" + pp.Path // monolog/monolog$26c814....json
+		ok, err := dirExists("cache/p/" + pp.Package)
+		if !ok {
+			log.Println("[HandlerPackageRequestV1] Create dir err:", err)
+		}
+	} else {
+		packageFullPath = "/" + pp.Package // provider-2013$69d51c2a....json
+		ok, err := dirExists("cache/p")
+		if !ok {
+			log.Println("[HandlerPackageRequestV1] Create dir err:", err)
+		}
+	}
+
+	cacheFile := fmt.Sprintf("cache/p/%s", packageFullPath)
+	// log.Println("[HandlerPackageRequestV1] cacheFile:", cacheFile)
+	content, err := ioutil.ReadFile(cacheFile)
+	if err != nil {
+		log.Println("[HandlerPackageRequestV1] Cache not found, fetching...", cacheFile)
+
+		// Fetch
+		url := os.Getenv("mirror") + "/p/" + packageFullPath
+		rt, err := downloadJSON(url)
+		if err != nil {
+			log.Println("[HandlerPackageRequestV1] Fetch resource err:", err)
+		}
+
+		// Cache file
+		ok, err := writeFile(cacheFile, rt)
+		if !ok {
+			log.Println("[HandlerPackageRequestV1] Write cache file err:", err)
+		}
+		content = rt
+	}
+
+	// // Replace download url in json
+	// content = replaceTarballURL(content)
+
+	c.Header("Content-Type", "application/json")
+	c.String(200, string(content))
 }

@@ -40,3 +40,8 @@ type fileHash struct {
 type PackageProviders struct {
 	Path string `uri:"provider" binding:"required" json:"provider"`
 }
+
+type pRequest struct {
+	Package string `uri:"package" binding:"required" json:"package"`
+	Path    string `uri:"path" json:"path"`
+}
