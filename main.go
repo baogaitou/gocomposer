@@ -23,6 +23,7 @@ func main() {
 	}
 
 	log.Println("Start service @ ", u)
+	log.Println("Origin site:", os.Getenv("mirror"))
 
 	// 启动服务器
 	router := InitRouter()

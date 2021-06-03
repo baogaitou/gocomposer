@@ -58,7 +58,7 @@ func fileExists(filename string) bool {
 }
 
 func replaceTarballURL(content []byte) []byte {
-	rt := strings.Replace(string(content), "https://api.github.com", Domain, -1)
+	rt := strings.Replace(string(content), "https://api.github.com", os.Getenv("domain"), -1)
 	return []byte(rt)
 }
 

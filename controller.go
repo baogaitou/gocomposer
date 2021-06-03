@@ -9,9 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var OriginSite = os.Getenv("mirror")
-var Domain = os.Getenv("domain")
-
 // var RunMode = os.Getenv("runmode")
 
 func HandlerRepoDownload(c *gin.Context) {
@@ -68,7 +65,7 @@ func HandlerPackageRequest(c *gin.Context) {
 		log.Println("Cache not found, fetching...")
 
 		// Fetch
-		url := fmt.Sprintf("%s/%s", OriginSite, c.Request.URL.String())
+		url := fmt.Sprintf("%s/%s", os.Getenv("mirror"), c.Request.URL.String())
 		rt, err := downloadJSON(url)
 		if err != nil {
 			log.Println("Fetch resource err:", err)
@@ -96,7 +93,7 @@ func HandlerPublicFunc(c *gin.Context) {
 		log.Println("Cache not found, fetching...")
 
 		// Fetch
-		url := fmt.Sprintf("%s/packages.json", OriginSite)
+		url := fmt.Sprintf("%s/packages.json", os.Getenv("mirror"))
 		rt, err := downloadJSON(url)
 		if err != nil {
 			log.Println("Fetch resource err:", err)
@@ -119,7 +116,7 @@ func HandlerPrivateFunc(c *gin.Context) {
 	content, err := ioutil.ReadFile(cacheFile)
 	if err != nil {
 		// log.Println("Cache not found")
-		url := fmt.Sprintf("%s/packages.json", OriginSite)
+		url := fmt.Sprintf("%s/packages.json", os.Getenv("mirror"))
 		rt, err := downloadJSON(url)
 		if err != nil {
 			log.Println("Fetch resource err:", err)
