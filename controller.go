@@ -1,13 +1,18 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/gin-gonic/gin"
 )
+
+//
 
 // var RunMode = os.Getenv("runmode")
 
@@ -86,25 +91,100 @@ func HandlerPackageRequest(c *gin.Context) {
 	c.String(200, string(content))
 }
 
-func HandlerPublicFunc(c *gin.Context) {
-	cacheFile := "cache/packages.json"
+func HandlerPackageRequestV1(c *gin.Context) {
+	log.Println("[HandlerPackageRequestV1] start")
+	var pp PackageProviders
+	if err := c.ShouldBindUri(&pp); err != nil {
+		c.JSON(400, gin.H{"msg": err.Error()})
+		return
+	}
+
+	log.Println(c.Request.URL)
+	spew.Dump(pp)
+
+	ok, err := dirExists("cache/p")
+	if !ok {
+		log.Println("[HandlerPackageRequestV1] Create dir err:", err)
+	}
+
+	cacheFile := fmt.Sprintf("cache/p/%s", pp.Path)
+	log.Println("[HandlerPackageRequestV1] cacheFile:", cacheFile)
 	content, err := ioutil.ReadFile(cacheFile)
 	if err != nil {
-		log.Println("Cache not found, fetching...")
+		log.Println("[HandlerPackageRequestV1] Cache not found, fetching...", cacheFile)
 
 		// Fetch
-		url := fmt.Sprintf("%s/packages.json", os.Getenv("mirror"))
+		url := fmt.Sprintf("%s/%s", os.Getenv("mirror"), c.Request.URL.String())
 		rt, err := downloadJSON(url)
 		if err != nil {
-			log.Println("Fetch resource err:", err)
+			log.Println("[HandlerPackageRequestV1] Fetch resource err:", err)
 		}
 
 		// Cache file
 		ok, err := writeFile(cacheFile, rt)
 		if !ok {
-			log.Println("Write cache file err:", err)
+			log.Println("[HandlerPackageRequestV1] Write cache file err:", err)
 		}
 		content = rt
+	}
+
+	c.Header("Content-Type", "application/json")
+	c.String(200, string(content))
+}
+
+func HandlerPublicFunc(c *gin.Context) {
+	cacheFile := "cache/packages.json"
+	content, err := ioutil.ReadFile(cacheFile)
+	if err != nil {
+		log.Println("[HandlerPublicFunc] Cache not found, fetching...")
+
+		// Fetch
+		url := fmt.Sprintf("%s/packages.json", os.Getenv("mirror"))
+		rt, err := downloadJSON(url)
+		if err != nil {
+			log.Println("[HandlerPublicFunc] Fetch resource err:", err)
+		}
+
+		// Cache file
+		ok, err := writeFile(cacheFile, rt)
+		if !ok {
+			log.Println("[HandlerPublicFunc] Write cache file err:", err)
+		}
+		content = rt
+
+		// providers-include
+		pkg := DefaultPackages{}
+		if err := json.Unmarshal(rt, &pkg); err != nil {
+			log.Println("[HandlerPublicFunc] unpack json err", err)
+		}
+		log.Println("[HandlerPublicFunc] ...")
+
+		for fn, v := range pkg.ProviderIncludes {
+			ok, err := dirExists("cache/p")
+			if !ok {
+				log.Println(err)
+			}
+
+			filename := strings.Replace(fn, "%hash%", v.Sha256, -1)
+			log.Println("filename:", filename)
+			exist := fileExists("cache/" + filename)
+			spew.Dump(exist)
+			if !exist {
+				providersUrl := os.Getenv("mirror") + "/" + filename
+				log.Println(providersUrl)
+				rt, err := downloadJSON(providersUrl)
+				if err != nil {
+					log.Println("[HandlerPublicFunc] Fetch resource err:", err)
+				}
+
+				// Cache file
+				providersCacheFile := "cache/" + filename
+				wok, werr := writeFile(providersCacheFile, rt)
+				if !wok {
+					log.Println("[HandlerPublicFunc] Write cache file err:", werr)
+				}
+			}
+		}
 	}
 
 	c.Header("Content-Type", "application/json")
@@ -119,13 +199,13 @@ func HandlerPrivateFunc(c *gin.Context) {
 		url := fmt.Sprintf("%s/packages.json", os.Getenv("mirror"))
 		rt, err := downloadJSON(url)
 		if err != nil {
-			log.Println("Fetch resource err:", err)
+			log.Println("[HandlerPrivateFunc] Fetch resource err:", err)
 		}
 
 		// Cache file
 		ok, err := writeFile(cacheFile, rt)
 		if !ok {
-			log.Println("Write cache file err:", err)
+			log.Println("[HandlerPrivateFunc] Write cache file err:", err)
 		}
 		content = rt
 	}

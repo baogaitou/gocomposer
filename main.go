@@ -8,8 +8,6 @@ import (
 	"github.com/alexsasharegan/dotenv"
 )
 
-// "github.com/davecgh/go-spew/spew"
-
 func main() {
 	err := dotenv.Load()
 	if err != nil {
