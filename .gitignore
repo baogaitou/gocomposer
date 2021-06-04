@@ -3,5 +3,4 @@ cache
 gocomposer*
 composer.*
 clean.sh
-.env
 .DS_Store
